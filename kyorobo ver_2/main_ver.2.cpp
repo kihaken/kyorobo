@@ -21,6 +21,7 @@ void left();
 void right();
 void turn_left();
 void turn_right();
+void brake();
 
 int main(){
     duty_cycle = 0.5;
@@ -46,6 +47,7 @@ int main(){
                 case 'd': right(); printf("right\r\n"); break;
                 case 'q': turn_left(); printf("turn_left\r\n"); break;
                 case 'e': turn_right(); printf("turn_right\r\n"); break;
+                default : brake(); printf("BRAKE"); break;
             }
         }
     }
@@ -91,6 +93,13 @@ void turn_right(){
     crawler[1].state(Motor::CW);
     crawler[2].state(Motor::CW);
     crawler[3].state(Motor::CW); 
+}
+
+void brake(){
+    crawler[0].state(Motor::Brake);
+    crawler[1].state(Motor::Brake);
+    crawler[2].state(Motor::Brake);
+    crawler[3].state(Motor::Brake);
 }
 
 void reference() {
