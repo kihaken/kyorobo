@@ -17,10 +17,10 @@ rbms key(can, 0, 1);
 
 int i;
 int data[8] = {0};
-float duty_cycle = 0.0f;
 int state[4] = {0};
 int _orb[1] = {0};
 int _key[1] = {0};
+float duty_cycle = 0.0f;
 
 void front();
 void back();
