@@ -21,6 +21,8 @@ void left();
 void right();
 void turn_left();
 void turn_right();
+void front_left();
+void front_right();
 void brake();
 
 int main(){
