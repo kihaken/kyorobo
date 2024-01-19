@@ -1,39 +1,48 @@
+// CANMotor.h の branches は main を選ぶこと
+// でないとインクルードエラーが吐かれる
+
 #include "mbed.h"
 #include "CANMotor.h"
 
 UnbufferedSerial pc(USBTX, USBRX, 115200);
-UnbufferedSerial ps3(p9, p10, 2400);  
-CAN can(p30, p29);
-CANMotorManager mng(can);
-CANMotor crawler[4] = {CANMotor(can, mng, 0x0C, 0),
-                       CANMotor(can, mng, 0x0D, 1),
-                       CANMotor(can, mng, 0x0E, 2),
-                       CANMotor(can, mng, 0x0F, 3) };
-float duty_cycle = 0.0f;
-int state[4] = {3};
-int data[8] = {0};
-int i;
+UnbufferedSerial ps3(p10, p11, 2400);
+CAN can(p30, p31);
+CANMotorManager _mng(can);
+CANMotor crawler[4] = { CANMotor(can, _mng, 0x0C, 0),
+                        CANMotor(can, _mng, 0x0D, 1),
+                        CANMotor(can, _mng, 0x0E, 2),
+                        CANMotor(can, _mng, 0x0F, 3), };
+rbms orb(can, 0, 1);
+rbms key(can, 0, 1);
 
-void reference();
+int i;
+int data[8] = {0};
+float duty_cycle = 0.0f;
+int state[4] = {0};
+int _orb[1] = {0};
+int _key[1] = {0};
+
 void front();
 void back();
 void left();
 void right();
-void turn_left();
-void turn_right();
 void front_left();
 void front_right();
+void back_left();
+void back_right();
+void turn_left();
+void turn_right();
 void brake();
+void down();
+void grab();
+void release();
 
 int main(){
     duty_cycle = 0.5;
 
-    while (mng.connect_all()){
-        ThisThread::sleep_for(2000ms);
-    }
-    while (true) {
-        if (ps3.readable()){ // ps3の信号解析
-            for (i = 0; i < 8; i++) {
+    while (true){
+        if (ps3.readable()) {
+            for (i = 0; i < DATA_SIZE; i++) {
                 data[i] = ps3.read(&data[i], 1);
             }
             reference();
@@ -45,63 +54,133 @@ int main(){
             switch(getc){
                 case 'w': front(); printf("front\r\n"); break;
                 case 'a': left(); printf("left\r\n"); break;
-                case 's': back(); printf("back\r\n"); break;
+                case 'x': back(); printf("back\r\n"); break;
                 case 'd': right(); printf("right\r\n"); break;
-                case 'q': turn_left(); printf("turn_left\r\n"); break;
-                case 'e': turn_right(); printf("turn_right\r\n"); break;
-                default : brake(); printf("BRAKE"); break;
+                case 'q': front_left(); printf("front_left\r\n"); break;
+                case 'e': front_right(); printf("front_right\r\n"); break;
+                case 'z': back_left(); printf("back_left\r\n"); break;
+                case 'c': back_right(); printf("back_right\r\n"); break;
+                case 'r': turn_left(); printf("turn_left\r\n"); break;
+                case 't': turn_right(); printf("turn_right\r\n"); break;
+                case ' ': brake(); printf("brake\r\n"); break;
+                case 'v': down(); printf("orb fall_down\r\n"); break;
+                case 'f': grab(); printf("key catch\r\n"); break;
+                case 'g': release(); printf("key release\r\n"); break;
             }
         }
     }
+    ThisThread::sleep_for(25ms);
 }
 
 void front(){
-    crawler[0].state(Motor::CW);
-    crawler[1].state(Motor::CCW);
-    crawler[2].state(Motor::CCW);
-    crawler[3].state(Motor::CW);
+    state[0] = Motor::CW;
+    state[1] = Motor::CCW;
+    state[2] = Motor::CCW;
+    state[3] = Motor::CW;
+    _orb[0] = 0;
+    _key[0] = 0;
 }
 
 void back(){
-    crawler[0].state(Motor::CCW);
-    crawler[1].state(Motor::CW);
-    crawler[2].state(Motor::CW);
-    crawler[3].state(Motor::CCW);
+    state[0] = Motor::CCW;
+    state[1] = Motor::CW;
+    state[2] = Motor::CW;
+    state[3] = Motor::CCW;
+    _orb[0] = 0;
+    _key[0] = 0;
 }
 
 void left(){
-    crawler[0].state(Motor::CCW);
-    crawler[1].state(Motor::CCW);
-    crawler[2].state(Motor::CW);
-    crawler[3].state(Motor::CW);
+    state[0] = Motor::CCW;
+    state[1] = Motor::CW;
+    state[2] = Motor::CCW;
+    state[3] = Motor::CW;
+    _orb[0] = 0;
+    _key[0] = 0;
 }
 
 void right(){
-    crawler[0].state(Motor::CW);
-    crawler[1].state(Motor::CW);
-    crawler[2].state(Motor::CCW);
-    crawler[3].state(Motor::CCW);
+    state[0] = Motor::CW;
+    state[1] = Motor::CCW;
+    state[2] = Motor::CW;
+    state[3] = Motor::CCW;
+    _orb[0] = 0;
+    _key[0] = 0;
+}
+
+void front_left(){
+    state[0] = Motor::Brake;
+    state[1] = Motor::CCW;
+    state[2] = Motor::Brake;
+    state[3] = Motor::CW;  
+    _orb[0] = 0;
+    _key[0] = 0;
+}
+
+void front_right(){
+    state[0] = Motor::CW;
+    state[1] = Motor::Brake;
+    state[2] = Motor::CCW;
+    state[3] = Motor::Brake; 
+    _orb[0] = 0;
+    _key[0] = 0;
+}
+
+void back_left(){
+    state[0] = Motor::CCW;
+    state[1] = Motor::Brake;
+    state[2] = Motor::CW;
+    state[3] = Motor::Brake;  
+    _orb[0] = 0;
+    _key[0] = 0;
+}
+
+void back_right(){
+    state[0] = Motor::Brake;
+    state[1] = Motor::CW;
+    state[2] = Motor::Brake;
+    state[3] = Motor::CCW;  
+    _orb[0] = 0;
+    _key[0] = 0;
 }
 
 void turn_left(){
-    crawler[0].state(Motor::CW);
-    crawler[1].state(Motor::CW);
-    crawler[2].state(Motor::CW);
-    crawler[3].state(Motor::CW);    
+    state[0] = Motor::CCW;
+    state[1] = Motor::CCW;
+    state[2] = Motor::CCW;
+    state[3] = Motor::CCW; 
+    _orb[0] = 0;
+    _key[0] = 0;
 }
 
-void turn_right(){
-    crawler[0].state(Motor::CCW);
-    crawler[1].state(Motor::CCW);
-    crawler[2].state(Motor::CCW);
-    crawler[3].state(Motor::CCW); 
+void turn_left(){
+    state[0] = Motor::CW;
+    state[1] = Motor::CW;
+    state[2] = Motor::CW;
+    state[3] = Motor::CW; 
+    _orb[0] = 0;
+    _key[0] = 0;
 }
 
 void brake(){
-    crawler[0].state(Motor::Brake);
-    crawler[1].state(Motor::Brake);
-    crawler[2].state(Motor::Brake);
-    crawler[3].state(Motor::Brake);
+    state[0] = Motor::Brake;
+    state[1] = Motor::Brake;
+    state[2] = Motor::Brake;
+    state[3] = Motor::Brake;
+    _orb[0] = 0;
+    _key[0] = 0;
+}
+
+void down(){
+    _orb[0] = 250;
+}
+
+void grab(){
+    _key[0] = 300;
+}
+
+void release(){
+    _key[0] = -300;
 }
 
 void reference() {
@@ -109,16 +188,12 @@ void reference() {
         if (data[1] == 0x00) {
             if (data[2] == 0x01) {
                 printf("↑\r\n");
-                front(); printf("front\r\n");
             } else if (data[2] == 0x02) {
                 printf("↓\r\n");
-                printf("back\r\n");
             } else if (data[2] == 0x04) {
                 printf("→\r\n");
-                printf("right\r\n");
             } else if (data[2] == 0x08) {
                 printf("←\r\n");
-                left(); printf("left\r\n");
             } else if (data[2] == 0x10) {
                 printf("△\r\n");
             } else if (data[2] == 0x20) {
@@ -138,16 +213,14 @@ void reference() {
             printf("□\r\n");
         } else if (data[1] == 0x02) {
             printf("L1\r\n");
-            turn_left(); printf("turn_left\r\n");
         } else if (data[1] == 0x04) {
             printf("L2\r\n");
         } else if (data[1] == 0x08) {
             printf("R1\r\n");
-            turn_right(); printf("turn_right\r\n");
         } else if (data[1] == 0x10) {
             printf("R2\r\n");
         }
     } else {
-        printf("データが異なります\r\n");
+        printf("The data is different\r\n");
     }
 }
