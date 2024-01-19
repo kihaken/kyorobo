@@ -82,17 +82,17 @@ void right(){
 }
 
 void turn_left(){
-    crawler[0].state(Motor::CCW);
-    crawler[1].state(Motor::CCW);
-    crawler[2].state(Motor::CCW);
-    crawler[3].state(Motor::CCW);    
-}
-
-void turn_right(){
     crawler[0].state(Motor::CW);
     crawler[1].state(Motor::CW);
     crawler[2].state(Motor::CW);
-    crawler[3].state(Motor::CW); 
+    crawler[3].state(Motor::CW);    
+}
+
+void turn_right(){
+    crawler[0].state(Motor::CCW);
+    crawler[1].state(Motor::CCW);
+    crawler[2].state(Motor::CCW);
+    crawler[3].state(Motor::CCW); 
 }
 
 void brake(){
