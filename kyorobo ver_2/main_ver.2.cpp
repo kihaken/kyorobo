@@ -3,10 +3,11 @@
 
 #include "mbed.h"
 #include "CANMotor.h"
+#include "rbms.h"
 
 UnbufferedSerial pc(USBTX, USBRX, 115200);
-UnbufferedSerial ps3(p10, p11, 2400);
-CAN can(p30, p31);
+UnbufferedSerial ps3(p9, p10, 2400);
+CAN can(p30, p29);
 CANMotorManager _mng(can);
 CANMotor crawler[4] = { CANMotor(can, _mng, 0x0C, 0),
                         CANMotor(can, _mng, 0x0D, 1),
@@ -17,11 +18,12 @@ rbms key(can, 0, 1);
 
 int i;
 int data[8] = {0};
+float duty_cycle = 0.0f;
 int state[4] = {0};
 int _orb[1] = {0};
 int _key[1] = {0};
-float duty_cycle = 0.0f;
 
+void reference();
 void front();
 void back();
 void left();
@@ -42,14 +44,14 @@ int main(){
 
     while (true){
         if (ps3.readable()) {
-            for (i = 0; i < DATA_SIZE; i++) {
+            for (i = 0; i < 8; i++) {
                 data[i] = ps3.read(&data[i], 1);
             }
             reference();
         }
 
         if (pc.readable()){
-            char getc;
+            char getc  = 0;
             pc.read(&getc, 2);
             switch(getc){
                 case 'w': front(); printf("front\r\n"); break;
@@ -67,6 +69,7 @@ int main(){
                 case 'f': grab(); printf("key catch\r\n"); break;
                 case 'g': release(); printf("key release\r\n"); break;
             }
+            _mng.write_all();
         }
     }
     ThisThread::sleep_for(25ms);
@@ -153,7 +156,7 @@ void turn_left(){
     _key[0] = 0;
 }
 
-void turn_left(){
+void turn_right(){
     state[0] = Motor::CW;
     state[1] = Motor::CW;
     state[2] = Motor::CW;
