@@ -51,7 +51,7 @@ int main(){
         }
 
         if (pc.readable()){
-            char getc  = 0;
+            char getc  =  0;
             pc.read(&getc, 2);
             switch(getc){
                 case 'w': front(); printf("front\r\n"); break;
@@ -64,12 +64,15 @@ int main(){
                 case 'c': back_right(); printf("back_right\r\n"); break;
                 case 'r': turn_left(); printf("turn_left\r\n"); break;
                 case 't': turn_right(); printf("turn_right\r\n"); break;
-                case ' ': brake(); printf("brake\r\n"); break;
                 case 'v': down(); printf("orb fall_down\r\n"); break;
                 case 'f': grab(); printf("key catch\r\n"); break;
                 case 'g': release(); printf("key release\r\n"); break;
             }
             _mng.write_all();
+        }else{
+            ThisThread::sleep_for(25ms);
+            brake();
+            printf("BRAKE\r\n");
         }
     }
     ThisThread::sleep_for(25ms);
