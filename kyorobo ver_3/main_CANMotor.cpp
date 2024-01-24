@@ -7,8 +7,8 @@
 
 UnbufferedSerial pc(USBTX, USBRX, 115200);
 CAN can(p30, p31);
-CANmotorManager _mng(can);
-CAMNotor crawler[4] = { CANMotor(can, _mng, 0x0C, 0),
+CANMotorManager _mng(can);
+CANMotor crawler[4] = { CANMotor(can, _mng, 0x0C, 0),
                         CANMotor(can, _mng, 0x0D, 1),
                         CANMotor(can, _mng, 0x0E, 2),
                         CANMotor(can, _mng, 0x0F, 3), }
