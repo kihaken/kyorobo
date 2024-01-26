@@ -28,7 +28,7 @@ int main(){
         if (m2006.rbms_read(msg, &rotation, &speed)) {
             // rbms_readが正常にデータを取得できた場合
             printf("send_succeed | rotation:%hd°\r\n", rotation);
-            if (rotation == stop_angle){
+            if (rotation == stop_angle){ // 回転を止めることはできたが、printf("rbms has...の表示ができなかった。でもOKの出力ができなかった
                 _m2006[0] = 0;
                 printf("OK");
                 m2006.rbms_send(_m2006);
@@ -41,9 +41,11 @@ int main(){
         ThisThread::sleep_for(25ms);
     }
     // while (true) {  
+    //     can.read(msg);
     //     m2006.rbms_send(_m2006);
     //     m2006.rbms_read(msg, &rotation, &speed);
     //     printf("send_succeed | rotation:%hd°\r\n", rotation);
+    //
     //     if (rotation == stop_angle){ // 指定した回転数（度）だけ回ると止まる
     //         _m2006[0] = 0;
     //         m2006.rbms_send(_m2006);
