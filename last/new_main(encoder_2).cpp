@@ -26,6 +26,7 @@ DigitalIn limit_x[2] = {DigitalIn(p15),
 						DigitalIn(p16)};
 DigitalIn limit_y[2] = {DigitalIn(p17),
 						DigitalIn(p18)};
+
 void reference_pc();
 void reference_ps3();
 void front(); // 足回り
