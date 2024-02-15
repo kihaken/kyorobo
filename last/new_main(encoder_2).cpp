@@ -10,16 +10,15 @@
 #define KEY_Y 1000
 #define DATA_SIZE 8 // PS3
 #define ORB_ROTE 60 // エンコーダーに指定する回転角
-#define KEY_X_ROTE 2000 
-#define KEY_Y_ROTE 15000
 
 UnbufferedSerial pc(USBTX, USBRX, 115200);
 UnbufferedSerial ps3(p10, p11, 2400);
-CAN can(p30, p29); // ロボマス関係
+// ロボマス関係
+CAN can(p30, p29); 
 rbms crawler(can, 0, 4);
 rbms orb(can, 0, 1);
 rbms key(can, 0, 2);
-InterruptIn a(p27); // エンコーダー用のピン宣言
+InterruptIn a(p27);
 InterruptIn b(p6);
 // 基準点, 目標点
 DigitalIn limit_x[2] = {DigitalIn(p15), 
@@ -41,11 +40,12 @@ void key_catch();
 void key_release();
 void key_up();
 void key_down();
+// センサの値を更新
 void encoder_update(float *angle); // エンコーダー
 void angle_reset();
 void a_slit();
 void b_slit();
-void limit_update(DigitalIn limit, Limit_Type type);
+void limit_update(DigitalIn limit, Limit_Type type); // リミットスイッチ
 
 int i = 0;
 int _orb[1] = {0}; 
@@ -54,13 +54,6 @@ int _crawler[4] = {0}; // 左前, 右前, 右後, 左後
 int data[8] = {0}; // PS3
 float angle = 0; 
 int passed_slit = 0; // エンコーダー
-enum Encoder_Type{ // どの機構に関するエンコーダーか
-	None,
-    orb_rote,
-    key_x_rote,
-    key_y_rote
-} encoder_type;
-encoder_type = None;
 enum Limit_Type{
 	none,
 	x_zero,
@@ -82,11 +75,7 @@ int main(){
         reference_pc();
         reference_ps3();
         // 指定した角度分回っていたら止める(brakeで上書き)
-        switch (encoder_type){
-            case orb_rote : if (angle == ORB_ROTE) {_orb[0] = 0; break;}
-            case key_x_rote : if (angle == KEY_X_ROTE) {_key[0] = 0; break;}
-            case key_y_rote : if (angle == KEY_Y_ROTE)  {_key[1] = 0; break;}
-        }
+        if (angle == ORB_ROTE) _orb[0] = 0;
         crawler.rbms_send(_crawler); // 制御信号の送信
         orb.rbms_send(_orb);
         key.rbms_send(_key);
@@ -145,30 +134,25 @@ void brake(){
 
 void orb_drop(){
     _orb[0] = ORB;
-    encoder_type = orb_rote;
 }
 
 void key_catch(){
     _key[0] = KEY_X_ROTE;
-    encoder_type = key_x_rote;
     limit_type = x_goal;
 }
 
 void key_release(){
     _key[0] = -KEY_X_ROTE;
-    encoder_type = key_x_rote;
     limit_type = x_zero;
 }
 
 void key_up(){
     _key[1] = KEY_Y_ROTE;
-    encoder_type = key_y_rote;
     limit_type = y_goal;
 }
 
 void key_down(){
     _key[1] = -KEY_Y_ROTE;
-    encoder_type = key_y_rote;
     limit_type = y_zero;
 }
 
