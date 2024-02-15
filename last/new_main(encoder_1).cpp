@@ -1,4 +1,4 @@
-// ここではkeyのリミットスイッチは基準点と目標点につける予定(encoder * 1)
+// ここではkeyのリミットスイッチは基準点のみつける予定 (エンコーダーを1個使用)
 // これはトルク制御 (たぶん速度制御できる余裕ない)
 
 #include "mbed.h"
@@ -292,3 +292,4 @@ void reference_ps3() {
         printf("The data is different\r\n");
     }
 }
+
