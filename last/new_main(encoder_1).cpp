@@ -56,18 +56,18 @@ int _crawler[4] = {0}; // 左前, 右前, 右後, 左後
 int data[8] = {0}; // PS3
 float angle = 0; 
 int passed_slit = 0; // エンコーダー
-enum Limit_Type{
+typedef enum {
 	none,
 	x_zero,
 	x_goal,
 	y_zero,
 	y_goal
-}limit_type;
-limit_type = none;
+}Limit_Type;
+Limit_Type limit_type = none;
 
 int main(){
     angle_reset();
-    thread1.start(callback(encoder_update()));
+    thread1.start(encoder_update);
     while(1){
         // リミットスイッチの状態をチェック
         for(i = 0;i < 2;i++){
@@ -160,7 +160,7 @@ void key_down(){
 }
 
 void encoder_update(){
-	mutex.lock();
+	   mutex.lock();
     void a_slit();
     void b_slit();
 
