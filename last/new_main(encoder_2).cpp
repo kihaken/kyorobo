@@ -1,4 +1,4 @@
-// ここではkeyのリミットスイッチは基準点のみつける予定 (エンコーダーを3個使用)
+//// ここではkeyのリミットスイッチは基準点のみつける予定 (エンコーダーを3個使用)
 // これはトルク制御 (たぶん速度制御できる余裕ない)
 
 #include "mbed.h"
@@ -10,24 +10,22 @@
 #define KEY_Y 1000
 #define DATA_SIZE 8 // PS3
 #define ORB_ROTE 60 // エンコーダーに指定する回転角
+#define KEY_X_ROTE 2000 
+#define KEY_Y_ROTE 15000
 
 UnbufferedSerial pc(USBTX, USBRX, 115200);
 UnbufferedSerial ps3(p10, p11, 2400);
-// ロボマス関係
-CAN can(p30, p29); 
+CAN can(p30, p29); // ロボマス関係
 rbms crawler(can, 0, 4);
 rbms orb(can, 0, 1);
 rbms key(can, 0, 2);
-InterruptIn a(p27);
+InterruptIn a(p27); // エンコーダー用のピン宣言
 InterruptIn b(p6);
 // 基準点, 目標点
-DigitalIn limit_x[2] = {DigitalIn(p15), 
-						DigitalIn(p16)};
-DigitalIn limit_y[2] = {DigitalIn(p17),
-						DigitalIn(p18)};
+DigitalIn limit_x(p15), limit_y(p16);
 Thread thread1;
 Mutex mutex;
-
+						
 void reference_pc();
 void reference_ps3();
 void front(); // 足回り
@@ -42,12 +40,11 @@ void key_catch();
 void key_release();
 void key_up();
 void key_down();
-// センサの値を更新
 void encoder_update(); // エンコーダー
 void angle_reset();
 void a_slit();
 void b_slit();
-void limit_update(DigitalIn limit, Limit_Type type); // リミットスイッチ
+void limit_update(DigitalIn limit, Limit_Type type);
 
 int i = 0;
 int _orb[1] = {0}; 
@@ -56,29 +53,36 @@ int _crawler[4] = {0}; // 左前, 右前, 右後, 左後
 int data[8] = {0}; // PS3
 float angle = 0; 
 int passed_slit = 0; // エンコーダー
+enum Encoder_Type{ // どの機構に関するエンコーダーか
+	   None,
+    orb_rote,
+    key_x_rote,
+    key_y_rote
+} encoder_type;
+encoder_type = None;
 enum Limit_Type{
-	none,
-	x_zero,
-	x_goal,
-	y_zero,
-	y_goal
+	   none,
+	   x_zero,
+	   y_zero
 }limit_type;
 limit_type = none;
 
 int main(){
     angle_reset();
-    thread1.start(callback(encoder_update()));
+    thread1.start(callback(encoder_update));
     while(1){
         // リミットスイッチの状態をチェック
-        for(i = 0;i < 2;i++){
-			limit_update(limit_x[i],limit_type);
-			limit_update(limit_y[i],limit_type);
-		}
+		limit_update(limit_x,limit_type);
+		limit_update(limit_y,limit_type);
         encoder_update(); // 角度取得後、angleに格納
         reference_pc();
         reference_ps3();
         // 指定した角度分回っていたら止める(brakeで上書き)
-        if (angle == ORB_ROTE) _orb[0] = 0;
+        switch (encoder_type){
+            case orb_rote : if (angle == ORB_ROTE) {_orb[0] = 0; break;}
+            case key_x_rote : if (angle == KEY_X_ROTE) {_key[0] = 0; break;}
+            case key_y_rote : if (angle == KEY_Y_ROTE)  {_key[1] = 0; break;}
+        }
         crawler.rbms_send(_crawler); // 制御信号の送信
         orb.rbms_send(_orb);
         key.rbms_send(_key);
@@ -137,25 +141,30 @@ void brake(){
 
 void orb_drop(){
     _orb[0] = ORB;
+    encoder_type = orb_rote;
 }
 
 void key_catch(){
     _key[0] = KEY_X_ROTE;
+    encoder_type = key_x_rote;
     limit_type = x_goal;
 }
 
 void key_release(){
     _key[0] = -KEY_X_ROTE;
+    encoder_type = key_x_rote;
     limit_type = x_zero;
 }
 
 void key_up(){
     _key[1] = KEY_Y_ROTE;
+    encoder_type = key_y_rote;
     limit_type = y_goal;
 }
 
 void key_down(){
     _key[1] = -KEY_Y_ROTE;
+    encoder_type = key_y_rote;
     limit_type = y_zero;
 }
 
@@ -199,10 +208,8 @@ void limit_update(DigitalIn limit, Limit_Type type)
 {
 	if (type == none) return;
 	switch (type){
-		case x_zero : 
-		case x_goal : if (limit) {_key[0] = 0; angle_reset(); break;}
-		case y_zero : 
-		case y_goal : if (limit) {_key[1] = 0; angle_reset(); break;}
+		case x_zero : if (limit) {_key[0] = 0; angle_reset(); break;}
+		case y_zero : if (limit) {_key[1] = 0; angle_reset(); break;}
 	}
 }
 
