@@ -41,7 +41,7 @@ void key_catch();
 void key_release();
 void key_up();
 void key_down();
-void encoder(float *angle); // エンコーダー
+void encoder_update(float *angle); // エンコーダー
 void angle_reset();
 void a_slit();
 void b_slit();
@@ -78,7 +78,7 @@ int main(){
 			limit_update(limit_x[i],limit_type);
 			limit_update(limit_y[i],limit_type);
 		}
-        encoder(&angle); // 角度取得後、angleに格納
+        encoder_update(&angle); // 角度取得後、angleに格納
         reference_pc();
         reference_ps3();
         // 指定した角度分回っていたら止める(brakeで上書き)
@@ -172,7 +172,7 @@ void key_down(){
     limit_type = y_zero;
 }
 
-void encoder(float *angle){
+void encoder_update(float *angle){
     void a_slit();
     void b_slit();
 
