@@ -25,6 +25,8 @@ DigitalIn limit_x[2] = {DigitalIn(p15),
 						DigitalIn(p16)};
 DigitalIn limit_y[2] = {DigitalIn(p17),
 						DigitalIn(p18)};
+Thread thread1;
+Mutex mutex;
 
 void reference_pc();
 void reference_ps3();
@@ -41,7 +43,7 @@ void key_release();
 void key_up();
 void key_down();
 // センサの値を更新
-void encoder_update(float *angle); // エンコーダー
+void encoder_update(); // エンコーダー
 void angle_reset();
 void a_slit();
 void b_slit();
@@ -65,13 +67,14 @@ limit_type = none;
 
 int main(){
     angle_reset();
+    thread1.start(callback(encoder_update()));
     while(1){
         // リミットスイッチの状態をチェック
         for(i = 0;i < 2;i++){
 			limit_update(limit_x[i],limit_type);
 			limit_update(limit_y[i],limit_type);
 		}
-        encoder_update(&angle); // 角度取得後、angleに格納
+        encoder_update(); // 角度取得後、angleに格納
         reference_pc();
         reference_ps3();
         // 指定した角度分回っていたら止める(brakeで上書き)
@@ -156,7 +159,8 @@ void key_down(){
     limit_type = y_zero;
 }
 
-void encoder_update(float *angle){
+void encoder_update(){
+	mutex.lock();
     void a_slit();
     void b_slit();
 
@@ -166,8 +170,9 @@ void encoder_update(float *angle){
     a.fall(a_slit);
     b.rise(b_slit);
     b.fall(b_slit);
-    *angle = 0.45f * passed_slit; // 1割り込みごとに進む角度ｘ割り込みが行われた回数
-    printf("angle : %d.%d\r\n",(int)angle, (int)((*angle - (int)angle) * 100.0f));
+    angle = 0.45f * passed_slit; // 1割り込みごとに進む角度ｘ割り込みが行われた回数
+    printf("angle : %d.%d\r\n",(int)angle, (int)((angle - (int)angle) * 100.0f));
+    mutex.unlock();
 }
 
 void a_slit(){
