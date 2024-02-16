@@ -70,7 +70,7 @@ int data[8] = {0}; // PS3
 // int analog_data[8]; // joystic
 int passed_slit = 0; // エンコーダー
 float angle = 0; 
-int val = -1;
+int val = -1; // ボタンが押されてない時
 volatile bool interrupt_flag = false; // 割り込みフラグ
 
 int main(){
