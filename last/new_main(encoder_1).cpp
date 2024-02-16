@@ -3,7 +3,7 @@
 
 // SBDBT5V pin配置 (自分でもよくわかってない)
 // 上から
-// GND
+// GND（とりあえずGNDは確定、？)
 // VCC
 // p10(TX)
 // p5(Digital)
