@@ -13,7 +13,7 @@
 #define ORB_ROTE 60 // エンコーダーに指定する回転角
 
 UnbufferedSerial pc(USBTX, USBRX, 115200);
-PS3 ps3(p9, p10);
+PS3 ps3(p10, p5);
 // ロボマス関係
 CAN can(p30, p29); 
 rbms crawler(can, 0, 4);
@@ -55,35 +55,46 @@ int data[8] = {0}; // PS3
 // int analog_data[8]; // joystic
 int passed_slit = 0; // エンコーダー
 float angle = 0; 
-int val;
+int val = -1;
+volatile bool interrupt_flag = false; // 割り込みフラグ
 
 int main(){
     angle_reset();
+    ps3.attach(ps3_get_data);    
+    a.rise(a_slit); // 割り込みを設定
+    a.fall(a_slit);
+    b.rise(b_slit);
+    b.fall(b_slit);
     while(1){
-        limit_update(); // リミットスイッチの状態をチェック
-        encoder_update(); // 角度取得後、angleに格納
-        ps3.attach(ps3_get_data);
+        limit_update(); // リミットスイッチの状態をチェック        
+        if(interrupt_flag) { // 割り込みが発生したら
+            interrupt_flag = false; // フラグをクリア
+            encoder_update(); // 割り込み処理を実行
+        }
         // reference_pc();
         if(ps3.check_connection()){
-            printf("connecting...\r\n");
-                if(val == 1) {		// ボタンが押されているとき
-                    reference_ps3();	// 処理
-        	          // ps3.get_analog(analog_data); // joystic
-                } else if(val == -1) {	// 全てのボタンが離されたとき
-                    all_brake();// 処理
-                } else {	// ボタン操作が行われていなかったとき
+     		if(val == 1) {		// ボタンが押されているとき
+        		reference_ps3();	// 処理
+        	// ps3.get_analog(analog_data); // joystic
+        	} else if(val == -1) {	// 全てのボタンが離されたとき
+        		all_brake();
+                printf("all_brake\r\n"); // 処理
+        	} else {	// ボタン操作が行われていなかったとき
         			// 処理
-                } else {
-     	           printf("disconnected\r\n");
-        }
+            }
+     	} else {
+     		printf("disconnected\r\n");
+     	}
          // コントローラによる操作は割り込みで行われるため常時行う処理を書く(CANMotorの書き込みなど)
-    }
+        reference_ps3();
         // 指定した角度分回っていたら止める(brakeで上書き)
+        // printf("angle : %d.%d\r\n",(int)angle, (int)((angle - (int)angle) * 100.0f));
         if (angle == ORB_ROTE) _orb[0] = 0;
         crawler.rbms_send(_crawler); // 制御信号の送信
         orb.rbms_send(_orb);
         key.rbms_send(_key);
         ThisThread::sleep_for(10ms);
+    }
 }
 
 void front(){
@@ -158,22 +169,9 @@ void key_down(){
     _key[1] = -KEY_Y;
 }
 
-void encoder_update(){
-    void a_slit();
-    void b_slit();
-
-    int passed_slit = 0; // スリットをいくつ通過したか
-
-    a.rise(a_slit);
-    a.fall(a_slit);
-    b.rise(b_slit);
-    b.fall(b_slit);
-    angle = 0.45f * passed_slit; // 1割り込みごとに進む角度ｘ割り込みが行われた回数
-    // printf("angle : %d.%d\r\n",(int)angle, (int)((angle - (int)angle) * 100.0f));
-}
-
 void a_slit(){
-    if (a != b){
+    interrupt_flag = true;
+    if (a.read() != b.read()){
         passed_slit++; // a相が立ち上がった時、b相の信号と異ったら正転
     } else {
         passed_slit--;
@@ -181,11 +179,21 @@ void a_slit(){
 }
 
 void b_slit(){
-    if (a == b){
+    interrupt_flag = true;
+    if (a.read() == b.read()){
         passed_slit++; // b相が立ち上がった時、a相の信号と同じだったら正転
     } else {
         passed_slit--;
     }
+}
+
+void encoder_update(){
+    a.rise(a_slit);
+    a.fall(a_slit);
+    b.rise(b_slit);
+    b.fall(b_slit);
+    angle = 0.45f * passed_slit; // 1割り込みごとに進む角度ｘ割り込みが行われた回数
+    ThisThread::sleep_for(10ms);
 }
 
 void angle_reset(){
