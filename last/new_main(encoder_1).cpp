@@ -1,8 +1,9 @@
-// ここではkeyのリミットスイッチは基準点のみつける予定 (エンコーダーを1個使用)
+// ここではkeyのリミットスイッチは両端につける予定 (エンコーダー1個使用, リミットスイッチ4個使用)
 // これはトルク制御 (たぶん速度制御できる余裕ない)
 
 #include "mbed.h"
 #include "rbms.h"
+#include "PS3conOS6.h"
 
 #define CRAWLER 3000 // torque
 #define ORB 2000
@@ -12,7 +13,7 @@
 #define ORB_ROTE 60 // エンコーダーに指定する回転角
 
 UnbufferedSerial pc(USBTX, USBRX, 115200);
-UnbufferedSerial ps3(p10, p11, 2400);
+PS3 ps3(p9, p10);
 // ロボマス関係
 CAN can(p30, p29); 
 rbms crawler(can, 0, 4);
@@ -21,14 +22,10 @@ rbms key(can, 0, 2);
 InterruptIn a(p27);
 InterruptIn b(p6);
 // 基準点, 目標点
-DigitalIn limit_x[2] = {DigitalIn(p15), 
-						DigitalIn(p16)};
-DigitalIn limit_y[2] = {DigitalIn(p17),
-						DigitalIn(p18)};
-Thread thread1;
-Mutex mutex;
+DigitalIn limit_x[2] = { DigitalIn(p15), DigitalIn(p16) }, 
+          limit_y[2] = { DigitalIn(p17), DigitalIn(p18) };
 
-void reference_pc();
+// void reference_pc();
 void reference_ps3();
 void front(); // 足回り
 void back();
@@ -36,7 +33,7 @@ void left();
 void right();
 void turn_left();
 void turn_right();
-void brake();
+void all_brake();
 void orb_drop(); // 回収機構
 void key_catch();
 void key_release();
@@ -47,35 +44,41 @@ void encoder_update(); // エンコーダー
 void angle_reset();
 void a_slit();
 void b_slit();
-void limit_update(DigitalIn limit, Limit_Type type); // リミットスイッチ
+void limit_update();
+void ps3_get_data();
 
 int i = 0;
 int _orb[1] = {0}; 
 int _key[2] = {0}; // ツメ, 昇降
 int _crawler[4] = {0}; // 左前, 右前, 右後, 左後
 int data[8] = {0}; // PS3
-float angle = 0; 
+// int analog_data[8]; // joystic
 int passed_slit = 0; // エンコーダー
-typedef enum {
-	none,
-	x_zero,
-	x_goal,
-	y_zero,
-	y_goal
-}Limit_Type;
-Limit_Type limit_type = none;
+float angle = 0; 
+int val;
 
 int main(){
     angle_reset();
-    thread1.start(encoder_update);
     while(1){
-        // リミットスイッチの状態をチェック
-        for(i = 0;i < 2;i++){
-			limit_update(limit_x[i],limit_type);
-			limit_update(limit_y[i],limit_type);
-		}
+        limit_update(); // リミットスイッチの状態をチェック
         encoder_update(); // 角度取得後、angleに格納
-        reference_pc();
+        ps3.attach(ps3_get_data);
+        // reference_pc();
+        if(ps3.check_connection()){
+     		printf("接続中");
+     		if(val == 1) {		// ボタンが押されているとき
+        		reference_ps3();	// 処理
+        	// ps3.get_analog(analog_data); // joystic
+        	} else if(val == -1) {	// 全てのボタンが離されたとき
+        			// 処理
+        	} else {	// ボタン操作が行われていなかったとき
+        			// 処理
+            }
+     	} else {
+     		printf("非接続中");
+     	}
+         // コントローラによる操作は割り込みで行われるため常時行う処理を書く(CANMotorの書き込みなど)
+    }
         reference_ps3();
         // 指定した角度分回っていたら止める(brakeで上書き)
         if (angle == ORB_ROTE) _orb[0] = 0;
@@ -83,7 +86,6 @@ int main(){
         orb.rbms_send(_orb);
         key.rbms_send(_key);
         ThisThread::sleep_for(10ms);
-    }
 }
 
 void front(){
@@ -128,11 +130,14 @@ void turn_right(){
     _crawler[3] = CRAWLER; 
 }
 
-void brake(){
+void all_brake(){
     _crawler[0] = 0;
     _crawler[1] = 0;
     _crawler[2] = 0;
     _crawler[3] = 0;
+    _orb[0] = 0;
+    _key[0] = 0;
+    _key[1] = 0;
 }
 
 void orb_drop(){
@@ -140,27 +145,22 @@ void orb_drop(){
 }
 
 void key_catch(){
-    _key[0] = KEY_X_ROTE;
-    limit_type = x_goal;
+    _key[0] = KEY_X;
 }
 
 void key_release(){
-    _key[0] = -KEY_X_ROTE;
-    limit_type = x_zero;
+    _key[0] = -KEY_X;
 }
 
 void key_up(){
-    _key[1] = KEY_Y_ROTE;
-    limit_type = y_goal;
+    _key[1] = KEY_Y;
 }
 
 void key_down(){
-    _key[1] = -KEY_Y_ROTE;
-    limit_type = y_zero;
+    _key[1] = -KEY_Y;
 }
 
 void encoder_update(){
-	   mutex.lock();
     void a_slit();
     void b_slit();
 
@@ -171,8 +171,7 @@ void encoder_update(){
     b.rise(b_slit);
     b.fall(b_slit);
     angle = 0.45f * passed_slit; // 1割り込みごとに進む角度ｘ割り込みが行われた回数
-    printf("angle : %d.%d\r\n",(int)angle, (int)((angle - (int)angle) * 100.0f));
-    mutex.unlock();
+    // printf("angle : %d.%d\r\n",(int)angle, (int)((angle - (int)angle) * 100.0f));
 }
 
 void a_slit(){
@@ -195,101 +194,86 @@ void angle_reset(){
     angle = 0;
 }
 
-void limit_update(DigitalIn limit, Limit_Type type)
-{
-	if (type == none) return;
-	switch (type){
-		case x_zero : 
-		case x_goal : if (limit) {_key[0] = 0; angle_reset(); break;}
-		case y_zero : 
-		case y_goal : if (limit) {_key[1] = 0; angle_reset(); break;}
-	}
+void limit_update(){
+    if (limit_x[0].read()) {_key[0] = 0; angle_reset(); printf("Limit_x[0]!!!!");}
+    if (limit_x[1].read()) {_key[0] = 0; angle_reset(); printf("Limit_x[1]!!!!");}
+    if (limit_y[0].read()) {_key[1] = 0; angle_reset(); printf("Limit_y[0]!!!!");}
+    if (limit_y[1].read()) {_key[1] = 0; angle_reset(); printf("Limit_y[1]!!!!");}
+    
 }
 
-void reference_pc(){
-    if (pc.readable()) {
-        char getc;
-        pc.read(&getc, 2);
-        switch(getc){
-            case 'w': front(); printf("front\r\n"); break;
-            case 'a': left(); printf("left\r\n"); break;
-            case 's': back(); printf("back\r\n"); break;
-            case 'd': right(); printf("right\r\n"); break;
-            case 'q': turn_left(); printf("turn_left\r\n"); break;
-            case 'e': turn_right(); printf("turn_right\r\n"); break;
-            case 'x': orb_drop(); printf("orb_drop\r\n"); break;
-            case 'h': key_catch(); printf("key_catch\r\n"); break;
-            case 'f': key_release(); printf("key_release\r\n"); break;
-            case 't': key_up(); printf("key_up\r\n"); break;
-            case 'g': key_down(); printf("key_down\r\n"); break;
-        }
-    }
-}
+// void reference_pc(){
+//     if (pc.readable()) {
+//         char getc;
+//         pc.read(&getc, 2);
+//         switch(getc){
+//             case 'w': front(); printf("front\r\n"); break;
+//             case 'a': left(); printf("left\r\n"); break;
+//             case 's': back(); printf("back\r\n"); break;
+//             case 'd': right(); printf("right\r\n"); break;
+//             case 'q': turn_left(); printf("turn_left\r\n"); break;
+//             case 'e': turn_right(); printf("turn_right\r\n"); break;
+//             case 'x': orb_drop(); printf("orb_drop\r\n"); break;
+//             case 'h': key_catch(); printf("key_catch\r\n"); break;
+//             case 'f': key_release(); printf("key_release\r\n"); break;
+//             case 't': key_up(); printf("key_up\r\n"); break;
+//             case 'g': key_down(); printf("key_down\r\n"); break;
+//             default : crawler_brake(); break;
+//         }
+//     }
+// }
+
+ void ps3_get_data()
+ {
+ 	ps3.get_data(data);
+ }
 
 void reference_ps3() {
-    if (ps3.readable()) {
-        for (i = 0; i < DATA_SIZE; i++) {
-            data[i] = ps3.read(&data[i], 1);
-        }
+    //  クローラー    
+    if (data[PS3::UP]){
+        front();
+        printf("front\r\n");
     }
-    if (data[0] == 0x80) {
-        if (data[1] == 0x00) {
-            if (data[2] == 0x01) {
-                printf("↑\r\n");
-                key_up();
-                printf("Key_up\r\n");
-            } else if (data[2] == 0x02) {
-                printf("↓\r\n");
-                key_down();
-                printf("Key_down\r\n");
-            } else if (data[2] == 0x04) {
-                printf("→\r\n");
-                key_catch();
-                printf("key_catch\r\n");
-            } else if (data[2] == 0x08) {
-                printf("←\r\n");
-                key_release();
-                printf("key_release\r\n");
-            } else if (data[2] == 0x10) {
-                printf("△\r\n");
-                front();
-                printf("front\r\n");
-            } else if (data[2] == 0x20) {
-                printf("×\r\n");
-                back();
-                printf("back\r\n");
-            } else if (data[2] == 0x40) {
-                printf("○\r\n");
-                right();
-                printf("right\r\n");
-            } else if (data[2] == 0x03) {
-                printf("START\r\n");
-            } else if (data[2] == 0x0c) {
-                printf("SELECT\r\n");
-            } else if (data[2] == 0x00) {
-                if ((data[3] == 0x40) && (data[4] == 0x40) && (data[5] == 0x40) && (data[6] == 0x40) && (data[7] == 0x00)) {
-                    printf("neutral\r\n");
-                }
-            }
-        } else if (data[1] == 0x01) {
-            printf("□\r\n");
-            left();
-            printf("left\r\n");
-        } else if (data[1] == 0x02) {
-            printf("L1\r\n");
-            turn_left();
-            printf("turn_left\r\n");
-        } else if (data[1] == 0x04) {
-            printf("L2\r\n");
-        } else if (data[1] == 0x08) {
-            printf("R1\r\n");
-            turn_right();
-            printf("turn_right");
-        } else if (data[1] == 0x10) {
-            printf("R2\r\n");
-        }
-    } else {
-        printf("The data is different\r\n");
+    if (data[PS3::DOWN]){
+        back();
+        printf("back\r\n");
+    }
+    if (data[PS3::LEFT]){
+        left();
+        printf("left\r\n");
+    }
+    if (data[PS3::RIGHT]){
+        right();
+        printf("right\r\n");
+    }
+    if (data[PS3::L1 && PS3::LEFT]){
+        turn_left();
+        printf("turn left\r\n");
+    }
+    if (data[PS3::L1 && PS3::RIGHT]){
+        turn_right();
+        printf("turn right\r\n");
+    }
+    // オーブ
+    if (data[PS3::R1 && PS3::CROSS]){
+        orb_drop();
+        printf("orb_drop\r\n");
+    }
+    // キー
+    if (data[PS3::TRIANGLE]){
+        key_up();
+        printf("key_up\r\n");
+    }
+    if (data[PS3::CROSS]){
+        key_down();
+        printf("key_down\r\n");
+    }
+    if (data[PS3::SQUARE]){
+        key_catch();
+        printf("key_catch\r\n");
+    }
+    if (data[PS3::CIRCLE]){
+        key_release();
+        printf("key_release\r\n");
     }
 }
-
