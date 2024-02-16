@@ -1,6 +1,21 @@
 // ここではkeyのリミットスイッチは両端につける予定 (エンコーダー1個使用, リミットスイッチ4個使用)
 // これはトルク制御 (たぶん速度制御できる余裕ない)
 
+// SBDBT5V pin配置
+// 上から
+// GND
+// VCC
+// p10(TX)
+// p5(Digital)
+
+// Rotary Encoder pin配置
+// 上から
+// p6(B相)
+// VCC
+// p27(A相)
+
+// GND
+
 #include "mbed.h"
 #include "rbms.h"
 #include "PS3conOS6.h"
