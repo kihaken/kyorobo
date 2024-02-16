@@ -37,8 +37,8 @@ rbms key(can, 0, 2);
 InterruptIn a(p27);
 InterruptIn b(p6);
 // 基準点, 目標点
-DigitalIn limit_x[2] = { DigitalIn(p15), DigitalIn(p16) }, 
-          limit_y[2] = { DigitalIn(p17), DigitalIn(p18) };
+DigitalIn limit_x[2] = { DigitalIn(p18), DigitalIn(p20) }, 
+          limit_y[2] = { DigitalIn(p21), DigitalIn(p23) };
 
 // void reference_pc();
 void reference_ps3();
