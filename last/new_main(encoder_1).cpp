@@ -65,21 +65,19 @@ int main(){
         ps3.attach(ps3_get_data);
         // reference_pc();
         if(ps3.check_connection()){
-     		printf("接続中");
-     		if(val == 1) {		// ボタンが押されているとき
-        		reference_ps3();	// 処理
-        	// ps3.get_analog(analog_data); // joystic
-        	} else if(val == -1) {	// 全てのボタンが離されたとき
+            printf("connecting...\r\n");
+                if(val == 1) {		// ボタンが押されているとき
+                    reference_ps3();	// 処理
+        	          // ps3.get_analog(analog_data); // joystic
+                } else if(val == -1) {	// 全てのボタンが離されたとき
+                    all_brake();// 処理
+                } else {	// ボタン操作が行われていなかったとき
         			// 処理
-        	} else {	// ボタン操作が行われていなかったとき
-        			// 処理
-            }
-     	} else {
-     		printf("非接続中");
-     	}
+                } else {
+     	           printf("disconnected\r\n");
+        }
          // コントローラによる操作は割り込みで行われるため常時行う処理を書く(CANMotorの書き込みなど)
     }
-        reference_ps3();
         // 指定した角度分回っていたら止める(brakeで上書き)
         if (angle == ORB_ROTE) _orb[0] = 0;
         crawler.rbms_send(_crawler); // 制御信号の送信
