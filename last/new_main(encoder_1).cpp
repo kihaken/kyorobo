@@ -82,9 +82,9 @@ int main(){
     b.fall(b_slit);
     while(1){
         limit_update(); // リミットスイッチの状態をチェック        
-        if(interrupt_flag) { // 割り込みが発生したら
-            interrupt_flag = false; // フラグをクリア
-            encoder_update(); // 割り込み処理を実行
+        if(interrupt_flag) { // フラグが立ったら
+            interrupt_flag = false;
+            encoder_update();
         }
         // reference_pc();
         if(ps3.check_connection()){
