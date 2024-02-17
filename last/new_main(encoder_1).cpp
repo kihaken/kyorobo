@@ -88,6 +88,7 @@ int main(){
         }
         // reference_pc();
         if(ps3.check_connection()){
+            printf("connecting...");
      		if(val == 1) {		// ボタンが押されているとき
         		reference_ps3();	// 処理
         	// ps3.get_analog(analog_data); // joystic
