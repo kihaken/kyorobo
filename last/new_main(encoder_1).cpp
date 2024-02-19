@@ -87,8 +87,9 @@ int main(){
             encoder_update();
         }
         // reference_pc();
-        if(ps3.check_connection()){
+        if(ps3.get_data()){
             printf("connecting...\r\n");
+            val = check_connection())
      		if(val == 1) {		// ボタンが押されているとき
         		reference_ps3();	// 処理
         	// ps3.get_analog(analog_data); // joystic
@@ -102,7 +103,6 @@ int main(){
      		printf("disconnected\r\n");
      	}
          // コントローラによる操作は割り込みで行われるため常時行う処理を書く(CANMotorの書き込みなど)
-        reference_ps3();
         // 指定した角度分回っていたら止める(brakeで上書き)
         // printf("angle : %d.%d\r\n",(int)angle, (int)((angle - (int)angle) * 100.0f));
         if (angle == ORB_ROTE) _orb[0] = 0;
@@ -299,3 +299,10 @@ void reference_ps3() {
         printf("key_release\r\n");
     }
 }
+
+
+
+
+
+
+
