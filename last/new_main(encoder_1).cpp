@@ -39,6 +39,7 @@ InterruptIn b(p6);
 // 基準点, 目標点
 DigitalIn limit_x[2] = { DigitalIn(p18), DigitalIn(p20) }, 
           limit_y[2] = { DigitalIn(p21), DigitalIn(p23) };
+// Thread thread1;
 
 // void reference_pc();
 void reference_ps3();
