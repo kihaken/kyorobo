@@ -1,309 +1,275 @@
-// ここではkeyのリミットスイッチは両端につける予定 (エンコーダー1個使用, リミットスイッチ4個使用)
-// これはトルク制御 (たぶん速度制御できる余裕ない)
-
-// SBDBT5V pin配置 (自分でもよくわかってない)
-// 上から
-// GND（とりあえずGNDは確定、？)
-// VCC
-// p10(TX)
-// p5(Digital)
-
-// Rotary Encoder pin配置
-// 上から
-// p6(B相)
-// VCC
-// p27(A相)
-
-// GND
-
+/*////////注意//////////
+・ordを動かすとき(R2)のボタンを触るとき60度の値を読み取って回転が止まるまで絶対にボタンは離さない
+→離したら値がおかしくなって次から正常に動作しなくなります
+//////////////////////*/
+  
 #include "mbed.h"
-#include "rbms.h"
-#include "PS3conOS6.h"
+#include "CANMotor.h"
+#include "PS3_SBDBT5V.h"
 
-#define CRAWLER 3000 // torque
-#define ORB 2000
-#define KEY_X 800
-#define KEY_Y 1000
-#define DATA_SIZE 8 // PS3
-#define ORB_ROTE 60 // エンコーダーに指定する回転角
+UnbufferedSerial pc(USBTX,USBRX,115200);
+PS3 ps3(p27,p26);
+CAN can(p30,p29);
 
-UnbufferedSerial pc(USBTX, USBRX, 115200);
-PS3 ps3(p10, p5);
-// ロボマス関係
-CAN can(p30, p29); 
-rbms crawler(can, 0, 4);
-rbms orb(can, 0, 1);
-rbms key(can, 0, 2);
-InterruptIn a(p27);
-InterruptIn b(p6);
-// 基準点, 目標点
-DigitalIn limit_x[2] = { DigitalIn(p18), DigitalIn(p20) }, 
-          limit_y[2] = { DigitalIn(p21), DigitalIn(p23) };
-// Thread thread1;
+enum wheel{
+    FR,  
+    FL,
+    BR,
+    BL,
+    A,   //orb
+    B,   //key_open,close
+    C,   //key_up,down
+    TOTAL_WHEEL,
+};
 
-// void reference_pc();
-void reference_ps3();
-void front(); // 足回り
-void back();
-void left();
+CANMotorManager mng(can);
+const short int total_motor=7;
+CANMotor motor[total_motor]={
+    CANMotor(can,mng,0x00,0),  //FR
+    CANMotor(can,mng,0x01,0),  //FL
+    CANMotor(can,mng,0x02,0),  //BR
+    CANMotor(can,mng,0x03,0),  //BL
+    CANMotor(can,mng,0x04,0),  //A  orb
+    CANMotor(can,mng,0x05,0),  //B  key_open,close
+    CANMotor(can,mng,0x06,0),  //C  key_up,down
+};
+
+int state[7]={
+    Motor::Brake,
+    Motor::Brake,
+    Motor::Brake,
+    Motor::Brake,
+    Motor::Brake,
+    Motor::Brake,
+    Motor::Brake,
+};
+
+InterruptIn a(p27);  //エンコーダ―
+InterruptIn b(p6);   //エンコーダ―
+
+void up();
+void down();
 void right();
-void turn_left();
-void turn_right();
-void all_brake();
-void orb_drop(); // 回収機構
-void key_catch();
-void key_release();
+void left();
+void right_rotation();
+void left_rotation();
+
+void orb();
+void key_open();
+void key_close();
 void key_up();
 void key_down();
-// センサの値を更新
-void encoder_update(); // エンコーダー
-void angle_reset();
-void a_slit();
-void b_slit();
-void limit_update();
-void ps3_get_data();
 
-int i = 0;
-int _orb[1] = {0}; 
-int _key[2] = {0}; // ツメ, 昇降
-int _crawler[4] = {0}; // 左前, 右前, 右後, 左後
-int data[8] = {0}; // PS3
-// int analog_data[8]; // joystic
-int passed_slit = 0; // エンコーダー
-float angle = 0; 
-int val = -1; // ボタンが押されてない時
-volatile bool interrupt_flag = false; // 割り込みフラグ
+
+void Brake();
+
+void a_slit();  //エンコーダ―
+void b_slit();  //エンコーダ―
+
+
+void ps3_get_data();
+DigitalOut led1(LED1);
+
+int k;  //エンコーダーのときにつかう変数
+int val;
+int data[PS3::MAX_BUTTON];
+
+int analog_data[4];
+
+float duty_cycle=0.5;
+
+int passed_slit = 0;
+float angle = 0;
+
+int i;  //angleの値を入れるための変数
 
 int main(){
-    angle_reset();
-    ps3.attach(ps3_get_data);    
-    a.rise(a_slit); // 割り込みを設定
-    a.fall(a_slit);
-    b.rise(b_slit);
-    b.fall(b_slit);
-    while(1){
-        limit_update(); // リミットスイッチの状態をチェック        
-        if(interrupt_flag) { // フラグが立ったら
-            interrupt_flag = false;
-            encoder_update();
-        }
-        // reference_pc();
-        if(ps3.get_data()){
-            printf("connecting...\r\n");
-            val = check_connection())
-     		if(val == 1) {		// ボタンが押されているとき
-        		reference_ps3();	// 処理
-        	// ps3.get_analog(analog_data); // joystic
-        	} else if(val == -1) {	// 全てのボタンが離されたとき
-        		all_brake();
-                printf("all_brake\r\n"); // 処理
-        	} else {	// ボタン操作が行われていなかったとき
-        			// 処理
-            }
-     	} else {
-     		printf("disconnected\r\n");
-     	}
-         // コントローラによる操作は割り込みで行われるため常時行う処理を書く(CANMotorの書き込みなど)
-        // 指定した角度分回っていたら止める(brakeで上書き)
-        // printf("angle : %d.%d\r\n",(int)angle, (int)((angle - (int)angle) * 100.0f));
-        if (angle == ORB_ROTE) _orb[0] = 0;
-        crawler.rbms_send(_crawler); // 制御信号の送信
-        orb.rbms_send(_orb);
-        key.rbms_send(_key);
+    ps3.attach(&ps3_get_data);
+
+    while(true){
+        duty_cycle=0.5;
+
+        a.rise(a_slit);
+        a.fall(a_slit);
+        b.rise(b_slit);
+        b.fall(b_slit);
+        angle = 0.45f * passed_slit;
+        printf("angle : %d.%d\r\n",(int)angle,(int)((angle - (int)angle) * 100.0f));
         ThisThread::sleep_for(10ms);
+
+        if(ps3.check_connection()){
+            if(val==1){
+                if(data[PS3::UP]){
+                    up();
+                }else if(data[PS3::DOWN]){
+                    down();
+                }else if(data[PS3::RIGHT]){
+                    right();
+                }else if(data[PS3::LEFT]){
+                    left();
+                }else if(data[PS3::R1]){
+                    right_rotation();
+                }else if(data[PS3::L1]){
+                    left_rotation();
+                }else if(data[PS3::TRIANGLE]){
+                    key_open();
+                }else if(data[PS3::CIRCLE]){
+                    key_close();
+                }else if(data[PS3::CROSS]){
+                    key_up();
+                }else if(data[PS3::SQUARE]){
+                    key_down();
+                }else if(data[PS3::R2]){
+                    if(k==0){
+                        int i=angle;
+                        i+=60;
+                        k++;
+                    }
+                    if(angle>i){
+                        Brake();
+                        k=0;
+                    }else{
+                        orb();
+                    }  
+                }else if(val==-1){
+                    Brake();
+                }
+            }
+        }
+
+        for(int i=0;i<TOTAL_WHEEL;i++){
+            motor[i].duty_cycle(duty_cycle);
+            motor[i].state(state[i]);
+        }
+        mng.write_all();
+        led1=!led1;
+        ThisThread::sleep_for(50ms);
     }
 }
 
-void front(){
-    _crawler[0] =  CRAWLER;
-    _crawler[1] = -CRAWLER;
-    _crawler[2] = -CRAWLER;
-    _crawler[3] =  CRAWLER;
+void ps3_get_data(){
+    val = ps3.get_data(data);
 }
 
-void back(){
-    _crawler[0] = -CRAWLER;
-    _crawler[1] =  CRAWLER;
-    _crawler[2] =  CRAWLER;
-    _crawler[3] = -CRAWLER;
+void up(){
+    state[FR] = Motor::CW;
+    state[FL] = Motor::CCW;
+    state[BR] = Motor::CW;
+    state[BL] = Motor::CCW;
+    state[A] = Motor::Brake;
+    state[B] = Motor::Brake;
+    state[C] = Motor::Brake;
 }
-
-void left(){
-    _crawler[0] = -CRAWLER;
-    _crawler[1] =  CRAWLER;
-    _crawler[2] = -CRAWLER;
-    _crawler[3] =  CRAWLER;
+void down(){
+    state[FR] = Motor::CCW;
+    state[FL] = Motor::CW;
+    state[BR] = Motor::CCW;
+    state[BL] = Motor::CW;
+    state[A] = Motor::Brake;
+    state[B] = Motor::Brake;
+    state[C] = Motor::Brake;
 }
-
 void right(){
-    _crawler[0] =  CRAWLER;
-    _crawler[1] = -CRAWLER;
-    _crawler[2] =  CRAWLER;
-    _crawler[3] = -CRAWLER;
+    state[FR] = Motor::CCW;
+    state[FL] = Motor::CCW;
+    state[BR] = Motor::CW;
+    state[BL] = Motor::CW;
+    state[A] = Motor::Brake;
+    state[B] = Motor::Brake;
+    state[C] = Motor::Brake;
 }
-
-void turn_left(){
-    _crawler[0] = -CRAWLER;
-    _crawler[1] = -CRAWLER;
-    _crawler[2] = -CRAWLER;
-    _crawler[3] = -CRAWLER; 
+void left(){
+    state[FR] = Motor::CW;
+    state[FL] = Motor::CW;
+    state[BR] = Motor::CCW;
+    state[BL] = Motor::CCW;
+    state[A] = Motor::Brake;
+    state[B] = Motor::Brake;
+    state[C] = Motor::Brake;
 }
-
-void turn_right(){
-    _crawler[0] = CRAWLER;
-    _crawler[1] = CRAWLER;
-    _crawler[2] = CRAWLER;
-    _crawler[3] = CRAWLER; 
+void right_rotation(){
+    state[FR] = Motor::CCW;
+    state[FL] = Motor::CCW;
+    state[BR] = Motor::CCW;
+    state[BL] = Motor::CCW;
+    state[A] = Motor::Brake;
+    state[B] = Motor::Brake;
+    state[C] = Motor::Brake;
 }
-
-void all_brake(){
-    _crawler[0] = 0;
-    _crawler[1] = 0;
-    _crawler[2] = 0;
-    _crawler[3] = 0;
-    _orb[0] = 0;
-    _key[0] = 0;
-    _key[1] = 0;
+void left_rotation(){
+    state[FR] = Motor::CW;
+    state[FL] = Motor::CW;
+    state[BR] = Motor::CW;
+    state[BL] = Motor::CW;
+    state[A] = Motor::Brake;
+    state[B] = Motor::Brake;
+    state[C] = Motor::Brake;    	
 }
-
-void orb_drop(){
-    _orb[0] = ORB;
+void key_open(){
+    state[FR] = Motor::Brake;
+    state[FL] = Motor::Brake;
+    state[BR] = Motor::Brake;
+    state[BL] = Motor::Brake;
+    state[A] = Motor::Brake;
+    state[B] = Motor::CW;
+    state[C] = Motor::Brake;
 }
-
-void key_catch(){
-    _key[0] = KEY_X;
+void key_close(){
+    state[FR] = Motor::Brake;
+    state[FL] = Motor::Brake;
+    state[BR] = Motor::Brake;
+    state[BL] = Motor::Brake;
+    state[A] = Motor::Brake;
+    state[B] = Motor::CCW;
+    state[C] = Motor::Brake;
 }
-
-void key_release(){
-    _key[0] = -KEY_X;
-}
-
 void key_up(){
-    _key[1] = KEY_Y;
+    state[FR] = Motor::Brake;
+    state[FL] = Motor::Brake;
+    state[BR] = Motor::Brake;
+    state[BL] = Motor::Brake;
+    state[A] = Motor::Brake;
+    state[B] = Motor::Brake;
+    state[C] = Motor::CW;
 }
-
 void key_down(){
-    _key[1] = -KEY_Y;
+    state[FR] = Motor::Brake;
+    state[FL] = Motor::Brake;
+    state[BR] = Motor::Brake;
+    state[BL] = Motor::Brake;
+    state[A] = Motor::Brake;
+    state[B] = Motor::Brake;
+    state[C] = Motor::CCW;
 }
-
+void orb(){
+    state[FR] = Motor::Brake;
+    state[FL] = Motor::Brake;
+    state[BR] = Motor::Brake;
+    state[BL] = Motor::Brake;
+    state[A] = Motor::CW;
+    state[B] = Motor::Brake;
+    state[C] = Motor::Brake;
+}
 void a_slit(){
-    interrupt_flag = true;
-    if (a.read() != b.read()){
-        passed_slit++; // a相が立ち上がった時、b相の信号と異ったら正転
+    if (a != b){
+        passed_slit++;
     } else {
         passed_slit--;
     }
 }
-
 void b_slit(){
-    interrupt_flag = true;
-    if (a.read() == b.read()){
-        passed_slit++; // b相が立ち上がった時、a相の信号と同じだったら正転
+    if (a == b){
+        passed_slit++;
     } else {
         passed_slit--;
     }
 }
-
-void encoder_update(){
-    a.rise(a_slit);
-    a.fall(a_slit);
-    b.rise(b_slit);
-    b.fall(b_slit);
-    angle = 0.45f * passed_slit; // 1割り込みごとに進む角度ｘ割り込みが行われた回数
-    ThisThread::sleep_for(10ms);
+void Brake(){
+    state[FR] = Motor::Brake;
+    state[FL] = Motor::Brake;
+    state[BR] = Motor::Brake;
+    state[BL] = Motor::Brake;
+    state[A] = Motor::Brake;
+    state[B] = Motor::Brake;
+    state[C] = Motor::Brake;
 }
-
-void angle_reset(){
-    angle = 0;
-}
-
-void limit_update(){
-    if (limit_x[0].read()) {_key[0] = 0; angle_reset(); printf("Limit_x[0]!!!!");}
-    if (limit_x[1].read()) {_key[0] = 0; angle_reset(); printf("Limit_x[1]!!!!");}
-    if (limit_y[0].read()) {_key[1] = 0; angle_reset(); printf("Limit_y[0]!!!!");}
-    if (limit_y[1].read()) {_key[1] = 0; angle_reset(); printf("Limit_y[1]!!!!");}
-    
-}
-
-// void reference_pc(){
-//     if (pc.readable()) {
-//         char getc;
-//         pc.read(&getc, 2);
-//         switch(getc){
-//             case 'w': front(); printf("front\r\n"); break;
-//             case 'a': left(); printf("left\r\n"); break;
-//             case 's': back(); printf("back\r\n"); break;
-//             case 'd': right(); printf("right\r\n"); break;
-//             case 'q': turn_left(); printf("turn_left\r\n"); break;
-//             case 'e': turn_right(); printf("turn_right\r\n"); break;
-//             case 'x': orb_drop(); printf("orb_drop\r\n"); break;
-//             case 'h': key_catch(); printf("key_catch\r\n"); break;
-//             case 'f': key_release(); printf("key_release\r\n"); break;
-//             case 't': key_up(); printf("key_up\r\n"); break;
-//             case 'g': key_down(); printf("key_down\r\n"); break;
-//             default : crawler_brake(); break;
-//         }
-//     }
-// }
-
- void ps3_get_data()
- {
- 	ps3.get_data(data);
- }
-
-void reference_ps3() {
-    //  クローラー    
-    if (data[PS3::UP]){
-        front();
-        printf("front\r\n");
-    }
-    if (data[PS3::DOWN]){
-        back();
-        printf("back\r\n");
-    }
-    if (data[PS3::LEFT]){
-        left();
-        printf("left\r\n");
-    }
-    if (data[PS3::RIGHT]){
-        right();
-        printf("right\r\n");
-    }
-    if (data[PS3::L1 && PS3::LEFT]){
-        turn_left();
-        printf("turn left\r\n");
-    }
-    if (data[PS3::L1 && PS3::RIGHT]){
-        turn_right();
-        printf("turn right\r\n");
-    }
-    // オーブ
-    if (data[PS3::R1 && PS3::CROSS]){
-        orb_drop();
-        printf("orb_drop\r\n");
-    }
-    // キー
-    if (data[PS3::TRIANGLE]){
-        key_up();
-        printf("key_up\r\n");
-    }
-    if (data[PS3::CROSS]){
-        key_down();
-        printf("key_down\r\n");
-    }
-    if (data[PS3::SQUARE]){
-        key_catch();
-        printf("key_catch\r\n");
-    }
-    if (data[PS3::CIRCLE]){
-        key_release();
-        printf("key_release\r\n");
-    }
-}
-
-
-
-
-
-
-
