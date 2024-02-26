@@ -29,8 +29,9 @@ int main(){
         if (interrupt_flag){
             angle = 0.45f * passed_slit; // 1割り込みごとに進む角度ｘ通過したスリット数
             printf("angle : %d.%d\r\n",(int)angle, (int)((angle - (int)angle) * 100.0f));
-            ThisThread::sleep_for(10ms);
+            interrupt_flag = false;
         }
+        ThisThread::sleep_for(10ms);
     }
 }
 
