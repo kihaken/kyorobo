@@ -16,7 +16,7 @@ InterruptIn b(p6);
 void a_slit();
 void b_slit();
 
-vilatile bool interrupt_flag = false;
+volatile bool interrupt_flag = false;
 int passed_slit = 0;
 float angle = 0;
 
