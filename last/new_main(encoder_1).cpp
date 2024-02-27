@@ -46,6 +46,7 @@ int state[7]={
 
 InterruptIn a(p27);  //エンコーダ―
 InterruptIn b(p6);   //エンコーダ―
+volatile bool interrupt_flag = false;
 
 void up();
 void down();
