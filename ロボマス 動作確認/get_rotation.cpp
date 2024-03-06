@@ -60,7 +60,7 @@ void motor1_func(){
         printf("angle:%ld, motor_rote:%ld\r\n",motor1_angle ,motor1_rotation);
         if (motor1_rotation == MOTOR1_MAX){
             motor[0] = 0;
-            printf("Brake!!! Motor has rotated:%d°\r\n", MOTOR1_MAX);
+            printf("Brake!!! Motor1 has rotated:%d°\r\n", MOTOR1_MAX);
         }
         ThisThread::sleep_for(2ms);
     }  
@@ -76,7 +76,7 @@ void motor2_func(){
         printf("angle:%ld, motor_rote:%ld\r\n",motor2_angle ,motor2_rotation);
         if (motor2_rotation == MOTOR2_MAX){
             motor[1] = 0;
-            printf("Brake!!! Motor has rotated:%d°\r\n", MOTOR2_MAX);
+            printf("Brake!!! Motor2 has rotated:%d°\r\n", MOTOR2_MAX);
         }
         ThisThread::sleep_for(2ms);
     }  
