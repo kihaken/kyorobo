@@ -9,9 +9,9 @@
 #include "rbms.h"
 
 #define BUFFER_MAX 4
-#define GIAR_RATIO 36
-#define MOTOR1_MAX 120
-#define MOTOR2_MAX 1800
+#define GIAR_RATIO 36 // m2006のギア比
+#define MOTOR1_MAX 120 // 120周 
+#define MOTOR2_MAX 1800 // 1800周
 
 CAN can(p30, p29);
 CANMessage msg, buffer_motor1[BUFFER_MAX], buffer_motor2[BUFFER_MAX];
@@ -32,7 +32,7 @@ long motor1_rotation = 0;
 long motor2_rotation = 0;
 
 int main(){
-    motor[0] = 500;
+    motor[0] = 1000;
     motor[1] = 1500;
     thread1.start(motor1_func);
     thread2.start(motor2_func);
