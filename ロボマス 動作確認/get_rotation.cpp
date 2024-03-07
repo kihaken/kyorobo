@@ -9,9 +9,9 @@
 #include "rbms.h"
 
 #define BUFFER_MAX 4
-#define GIAR_RATIO 36 // m2006のギア比
 #define MOTOR1_MAX 120 // 120周 
 #define MOTOR2_MAX 1800 // 1800周
+const long GIAR_RATIO = 32; // m2006のギア比
 
 CAN can(p30, p29);
 CANMessage msg, buffer_motor1[BUFFER_MAX], buffer_motor2[BUFFER_MAX];
@@ -55,7 +55,7 @@ void motor1_func(){
         test.rbms_send(&motor[0]); // 制御信号の送信
 
         motor1_angle = rote_robo_ms_motor1.get_rote_sum();
-        motor1_rotation = rote_robo_ms_motor1.get_rote_sum() / GIAR_RATIO; 
+        motor1_rotation = motor1_angle / GIAR_RATIO; 
         printf("angle:%ld, motor_rote:%ld\r\n",motor1_angle ,motor1_rotation);
         if (motor1_rotation == MOTOR1_MAX){
             motor[0] = 0;
@@ -71,7 +71,7 @@ void motor2_func(){
         test.rbms_send(&motor[1]); // 制御信号の送信
 
         motor2_angle = rote_robo_ms_motor2.get_rote_sum();
-        motor2_rotation = rote_robo_ms_motor2.get_rote_sum() / GIAR_RATIO; 
+        motor2_rotation = motor2_angle / GIAR_RATIO; 
         printf("angle:%ld, motor_rote:%ld\r\n",motor2_angle ,motor2_rotation);
         if (motor2_rotation == MOTOR2_MAX){
             motor[1] = 0;
