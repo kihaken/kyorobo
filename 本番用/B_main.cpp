@@ -1,20 +1,3 @@
-/*///////////////////////////////////////注意///////////////////////////////////////////
-・orbを動かすとき(R2)のボタンを触るとき60度の値を読み取って回転が止まるまで絶対にボタンは離さない
-→離したら値がおかしくなって次から正常に動作しなくなります
-・オーブが落ちそうになったらボタンから手を放す！！！
-→たまにオーブが詰まるから
-//////////////////////////////////////////////////////////////////////////////////////*/
-
-// mbed-OS-6.15
-// リミットスイッチなしに変更
-// エンコーダーなしに変更(割り込みフラグの追加)
-// itidasi(), itidasi2()をコメントアウト
-// NEUTRAL時にBrake()を実行するようにした
-// solenoidもコメントアウト
-// itidasi,itidasi2関数の定義
-//コントローラ配置の修正
-// オーブのdudy比を0.3に変更
-
 // 使ってるピン番号 (p6, p10) p15, (予備としてp16, p18) p20, p26, p27, p29, p30
 // 使ってるボタン UP, DOWN, RIGHT, LEFT, E1, L1, R2, TRIANGLE, CROSS, CIRCLE, SQUARE
 
@@ -42,11 +25,11 @@ CANMotorManager mng(can);
 const int total_motor = TOTAL_WHEEL;
 CANMotor motor[total_motor] = {
     CANMotor(can,mng,0x00,0),
-    CANMotor(can,mng,0x01,1),
-    CANMotor(can,mng,0x02,2),
-    CANMotor(can,mng,0x03,3),
-    CANMotor(can,mng,0x04,4),
-    CANMotor(can,mng,0x05,5),
+    CANMotor(can,mng,0x01,0),
+    CANMotor(can,mng,0x02,0),
+    CANMotor(can,mng,0x03,0),
+    CANMotor(can,mng,0x04,0),
+    CANMotor(can,mng,0x05,0),
 };
 
 int state[total_motor] = {
