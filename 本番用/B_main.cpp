@@ -111,7 +111,7 @@ int main(){
                 }else if(PS3::SQUARE){
                     key_down();
                 }
-            }else{
+            }else if(val==-1){
                 Brake();
             }
 
