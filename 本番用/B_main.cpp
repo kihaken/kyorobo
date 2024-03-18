@@ -64,20 +64,20 @@ int data[PS3::MAX_BUTTON];
 
 int analog_data[4];
 
-float duty_cycle = 0.6f;
+float duty_cycle = 0.6;
 
 int main(){
     ps3.attach(&ps3_get_data);
     while(true){
-        duty_cycle = 0.6f;
+        duty_cycle = 0.6;
 
         if(ps3.check_connection()){
             if(val == 1){
                 if(PS3::UP){
-                    duty_cycle = 0.5f;
+                    duty_cycle = 0.5;
                     up();
                 }else if(PS3::DOWN){
-                    duty_cycle = 0.5f;
+                    duty_cycle = 0.5;
                     down();
                 }else if(PS3::RIGHT){
                     right_rotation();
@@ -90,7 +90,7 @@ int main(){
                 }else if(PS3::L1){
                     itidasi2();
                 }else if(PS3::R2){
-                    duty_cycle = 0.3f;
+                    duty_cycle = 0.3;
                     orb();
                 }
                 
