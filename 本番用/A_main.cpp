@@ -23,8 +23,8 @@ enum wheel{
     BL,
     A,   //orb
     B,   //orb_up,down
-    // C,   //key_open,close
-    // D,   //key_up,down
+    C,   //key_open,close
+    D,   //key_up,down
 
     TOTAL_WHEEL,
 };
@@ -38,8 +38,8 @@ CANMotor motor[total_motor]={
     CANMotor(can,mng,0x03,0),  //BL
     CANMotor(can,mng,0x04,0),  //A  orb
     CANMotor(can,mng,0x05,0),  //B  orb_up,down
-    // CANMotor(can,mng,0x06,0),  //C  key_open,close
-    // CANMotor(can,mng,0x07,0),   //D  key_up,down
+    CANMotor(can,mng,0x06,0),  //C  key_open,close
+    CANMotor(can,mng,0x07,0),   //D  key_up,down
 };
 
 int state[total_motor]={
@@ -49,8 +49,8 @@ int state[total_motor]={
     Motor::Brake,
     Motor::Brake,
     Motor::Brake,
-    // Motor::Brake,
-    // Motor::Brake,
+    Motor::Brake,
+    Motor::Brake,
 };
 
 //InterruptIn a(p10);  //エンコーダ―
@@ -190,8 +190,8 @@ void up(){
     state[BL] = Motor::CCW;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-    // state[C] = Motor::Brake;
-    // state[D] = Motor::Brake;
+    state[C] = Motor::Brake;
+    state[D] = Motor::Brake;
 }
 void down(){
     state[FR] = Motor::CCW;
@@ -200,8 +200,8 @@ void down(){
     state[BL] = Motor::CW;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-    // state[C] = Motor::Brake;
-    // state[D] = Motor::Brake;
+    state[C] = Motor::Brake;
+    state[D] = Motor::Brake;
 }
 void right(){
     state[FR] = Motor::CCW;
@@ -210,8 +210,8 @@ void right(){
     state[BL] = Motor::CW;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-    // state[C] = Motor::Brake;
-    // state[D] = Motor::Brake;
+    state[C] = Motor::Brake;
+    state[D] = Motor::Brake;
 }
 void left(){
     state[FR] = Motor::CW;
@@ -220,8 +220,8 @@ void left(){
     state[BL] = Motor::CCW;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-    // state[C] = Motor::Brake;
-    // state[D] = Motor::Brake;
+    state[C] = Motor::Brake;
+    state[D] = Motor::Brake;
 }
 void right_rotation(){
     state[FR] = Motor::CCW;
@@ -230,8 +230,8 @@ void right_rotation(){
     state[BL] = Motor::CCW;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-    // state[C] = Motor::Brake;
-    // state[D] = Motor::Brake;
+    state[C] = Motor::Brake;
+    state[D] = Motor::Brake;
 }
 void left_rotation(){
     state[FR] = Motor::CW;
@@ -240,8 +240,8 @@ void left_rotation(){
     state[BL] = Motor::CW;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-    // state[C] = Motor::Brake;   
-    // state[D] = Motor::Brake; 	
+    state[C] = Motor::Brake;   
+    state[D] = Motor::Brake; 	
 }
 void orb(){
     state[FR] = Motor::Brake;
@@ -250,8 +250,8 @@ void orb(){
     state[BL] = Motor::Brake;
     state[A] = Motor::CW;
     state[B] = Motor::Brake;
-    // state[C] = Motor::Brake;
-    // state[D] = Motor::Brake;
+    state[C] = Motor::Brake;
+    state[D] = Motor::Brake;
 }
 void orb_up(){
     state[FR] = Motor::Brake;
@@ -260,8 +260,8 @@ void orb_up(){
     state[BL] = Motor::Brake;
     state[A] = Motor::Brake;
     state[B] = Motor::CW;
-    // state[C] = Motor::Brake;
-    // state[D] = Motor::Brake;
+    state[C] = Motor::Brake;
+    state[D] = Motor::Brake;
 }
 void orb_down(){
     state[FR] = Motor::Brake;
@@ -270,8 +270,8 @@ void orb_down(){
     state[BL] = Motor::Brake;
     state[A] = Motor::Brake;
     state[B] = Motor::CCW;
-    // state[C] = Motor::Brake;
-    // state[D] = Motor::Brake;
+    state[C] = Motor::Brake;
+    state[D] = Motor::Brake;
 }
 void key_open(){
     state[FR] = Motor::Brake;
@@ -280,8 +280,8 @@ void key_open(){
     state[BL] = Motor::Brake;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-    // state[C] = Motor::CW;
-    // state[D] = Motor::Brake;
+    state[C] = Motor::CW;
+    state[D] = Motor::Brake;
 }
 void key_close(){
     state[FR] = Motor::Brake;
@@ -290,8 +290,8 @@ void key_close(){
     state[BL] = Motor::Brake;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-    // state[C] = Motor::CCW;
-    // state[D] = Motor::Brake;
+    state[C] = Motor::CCW;
+    state[D] = Motor::Brake;
 }
 void key_up(){
     state[FR] = Motor::Brake;
@@ -300,8 +300,8 @@ void key_up(){
     state[BL] = Motor::Brake;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-    // state[C] = Motor::Brake;
-    // state[D] = Motor::CW;
+    state[C] = Motor::Brake;
+    state[D] = Motor::CW;
 }
 void key_down(){
     state[FR] = Motor::Brake;
@@ -310,8 +310,8 @@ void key_down(){
     state[BL] = Motor::Brake;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-    // state[C] = Motor::Brake;
-    // state[D] = Motor::CCW;
+    state[C] = Motor::Brake;
+    state[D] = Motor::CCW;
 }
 void Brake(){
     state[FR] = Motor::Brake;
@@ -320,8 +320,8 @@ void Brake(){
     state[BL] = Motor::Brake;
     state[A] = Motor::Brake;
     state[B] = Motor::Brake;
-//     state[C] = Motor::Brake;
-//     state[D] = Motor::Brake;
+    state[C] = Motor::Brake;
+    state[D] = Motor::Brake;
 }
 // void a_slit(){
 //     interrupt_flag = true;
