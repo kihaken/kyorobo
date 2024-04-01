@@ -13,7 +13,6 @@ CANMessage msg;
 rbms test(can, 0, 1);
 UnbufferedSerial pc(USBTX, USBRX, 115200);
 rote_robo_ms rote_robo_ms_motor1(can, test, 0, 16);
-rote_robo_ms rote_robo_ms_motor2(can, test, 1, 16);
 Thread thread1;
 
 int motor[1] = 0;
