@@ -15,7 +15,7 @@ UnbufferedSerial pc(USBTX, USBRX, 115200);
 rote_robo_ms rote_robo_ms_motor1(can, test, 0, 16);
 Thread thread1;
 
-int motor[1] = 0;
+int motor[1] = {0};
 void motor1_func();
 
 int main() {
