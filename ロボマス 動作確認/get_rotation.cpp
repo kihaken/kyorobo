@@ -52,7 +52,7 @@ void set_all_static_reset(){
 void motor1_func(){
     while (true){
         rote_robo_ms_motor1.rote_robo_ms_update(buffer_motor1, BUFFER_MAX); // motor1の角度の更新
-        test.rbms_send(&motor[0]); // 制御信号の送信
+        test.rbms_send(motor); // 制御信号の送信
 
         motor1_angle = rote_robo_ms_motor1.get_rote_sum();
         motor1_rotation = motor1_angle / GIAR_RATIO; 
@@ -68,7 +68,7 @@ void motor1_func(){
 void motor2_func(){
     while (true){
         rote_robo_ms_motor2.rote_robo_ms_update(buffer_motor2, BUFFER_MAX); // motor2の角度の更新
-        test.rbms_send(&motor[1]); // 制御信号の送信
+        test.rbms_send(motor+1); // 制御信号の送信
 
         motor2_angle = rote_robo_ms_motor2.get_rote_sum();
         motor2_rotation = motor2_angle / GIAR_RATIO; 
