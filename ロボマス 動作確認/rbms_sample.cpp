@@ -27,6 +27,8 @@ int main() {
 }
 
 void motor1_func() {
-	test.rbms_send(motor);
-	ThisThread::sleep_for(2ms);
+	while(true){
+		test.rbms_send(motor);
+		ThisThread::sleep_for(2ms);
+ }
 }
