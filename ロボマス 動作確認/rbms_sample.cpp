@@ -1,7 +1,7 @@
-// m2006‚Í¬‚³‚¢‚Ù‚¤(0) m3508‚Í‘å‚«‚¢‚Ù‚¤(1)
-// ˆê‚Â‚ÌCAN‚Å“¯í—Ş‚Ìƒ‚[ƒ^[8ŒÂ‚Ü‚Å§Œä‰Â”\
-// ‘¬“x§Œä‚Ì‚Í“¯‚É‚S‚Â‚Ü‚Å‚É‚µ‚Ä‚¨‚­‚±‚Æ
-// Šp“xæ“¾‚ÍThread‚ğ—§‚Ä‚Äcan.read(msg)
+// m2006ã¯å°ã•ã„ã»ã†(0) m3508ã¯å¤§ãã„ã»ã†(1)
+// ä¸€ã¤ã®CANã§åŒç¨®é¡ã®ãƒ¢ãƒ¼ã‚¿ãƒ¼8å€‹ã¾ã§åˆ¶å¾¡å¯èƒ½
+// é€Ÿåº¦åˆ¶å¾¡ã®æ™‚ã¯åŒæ™‚ã«ï¼”ã¤ã¾ã§ã«ã—ã¦ãŠãã“ã¨
+// è§’åº¦å–å¾—ã¯Threadã‚’ç«‹ã¦ã¦can.read(msg)
 
 #include "mbed.h"
 #include "robo_ms.h"
@@ -10,7 +10,7 @@
 
 CAN can(p30, p29);
 CANMessage msg;
-rbms test(can, 0, 2);
+rbms test(can, 0, 1);
 UnbufferedSerial pc(USBTX, USBRX, 115200);
 rote_robo_ms rote_robo_ms_motor1(can, test, 0, 16);
 rote_robo_ms rote_robo_ms_motor2(can, test, 1, 16);
