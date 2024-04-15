@@ -104,8 +104,8 @@ void left_rotation(){
 }
 
 void Brake(){
-    state[FR] = Motor::0;
-    state[FL] = Motor::0;
-    state[BR] = Motor::0;
-    state[BL] = Motor::0;
+    state[FR] = 0;
+    state[FL] = 0;
+    state[BR] = 0;
+    state[BL] = 0;
 }
