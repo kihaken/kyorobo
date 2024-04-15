@@ -54,6 +54,8 @@ int main(){
                 }else if (PS3::L1){
                     left_rotation();
                 }
+            }else if(val == 0){
+                Brake();
             }
         }
         mng.write_all(duty_cycle);
@@ -104,4 +106,11 @@ void left_rotation(){
     state[FL] = Motor::CCW;
     state[BR] = Motor::CCW;
     state[BL] = Motor::CCW;
+}
+
+void Brake(){
+    state[FR] = Motor::Brake;
+    state[FL] = Motor::Brake;
+    state[BR] = Motor::Brake;
+    state[BL] = Motor::Brake;
 }
