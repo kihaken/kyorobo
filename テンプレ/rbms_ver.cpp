@@ -49,6 +49,8 @@ int main(){
                 }else if (PS3::L1){
                     left_rotation();
                 }
+            }else if(val == 0){
+                Brake();
             }
         }
         m3508.rbms_send(motor);
@@ -99,4 +101,11 @@ void left_rotation(){
     state[FL] = -3000;
     state[BR] = -3000;
     state[BL] = -3000;
+}
+
+void Brake(){
+    state[FR] = Motor::0;
+    state[FL] = Motor::0;
+    state[BR] = Motor::0;
+    state[BL] = Motor::0;
 }
